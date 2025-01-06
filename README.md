@@ -3,5 +3,3 @@
 # jupyter
 
 # terminal
-
-# vnc
