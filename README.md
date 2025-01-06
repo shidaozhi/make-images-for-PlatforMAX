@@ -1,0 +1,1 @@
+# make-images-for-PlatforMAX
