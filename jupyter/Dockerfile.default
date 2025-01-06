@@ -1,0 +1,47 @@
+FROM base-image:image-tag 
+
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo '$TZ' > /etc/timezone
+
+# the sources.list is debian os aliyun sources.list,very fast
+# if you network is slow, delete the next line: #
+# if you image os is ubuntu, change sources.list to ubuntu aliyun sources.list, and delete the next line: #
+# COPY sources.list /etc/apt/sources.list
+
+#Install basic dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential make cmake \
+    vim wget openssh-server software-properties-common python3-pip g++ libboost-all-dev\
+    && apt autoclean -y \
+    && apt autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+	
+# config sshd
+COPY ssh/sshd_config /etc/ssh/sshd_config
+COPY ssh/ssh-start-chpasswd.sh /usr/sbin/ssh-start-chpasswd.sh
+
+#config jupyter
+RUN pip install --no-cache-dir opencv-python pandas graphviz \
+                pyyaml scikit-learn dlib requests argparse \
+                cython scipy seaborn Plotly Bokeh \
+                Statsmodels NetworkX jupyter jupyterlab -i https://mirrors.aliyun.com/pypi/simple/
+
+RUN pip3 install --no-cache-dir opencv-python matplotlib pandas graphviz \
+                pyyaml scikit-learn dlib requests argparse \
+                cython scipy seaborn Plotly Bokeh \
+                Statsmodels NetworkX jupyter jupyterlab -i https://mirrors.aliyun.com/pypi/simple/
+
+
+COPY config-jupyter.sh /config-jupyter.sh
+RUN /config-jupyter.sh && rm /config-jupyter.sh
+COPY jupyter_server_config.py /root/.jupyter/jupyter_server_config.py
+# RUN jupyter notebook --generate-config
+COPY jupyter_notebook_config.py /root/.jupyter/jupyter_notebook_config.py
+COPY custom.js /root/.jupyter/custom/custom.js
+
+#Set tini 
+COPY tini /tini
+ENTRYPOINT ["/tini", "--"]
+RUN mkdir -p /var/run/sshd && chmod 777 /tini
+EXPOSE 22
+
+
