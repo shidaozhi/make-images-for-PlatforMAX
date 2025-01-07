@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 从构建阶段拷贝已安装的 Python 包
+# python3.x 是一个占位符，实际路径中的 x 需要替换为具体的 Python 版本号（例如 python3.8 或 python3.9）
 COPY --from=builder /usr/local/lib/python3.x/dist-packages /usr/local/lib/python3.x/dist-packages
 
 # 配置 SSH
