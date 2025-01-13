@@ -1,11 +1,14 @@
+# Use a base image with a specific tag
 FROM base-image:image-tag 
 
+# Set the timezone to Asia/Shanghai
 ENV TZ=Asia/Shanghai
+# Configure the system timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo '$TZ' > /etc/timezone
 
-# the sources.list is debian os aliyun sources.list,very fast
-# if you network is slow, delete the next line: #
-# if you image os is ubuntu, change sources.list to ubuntu aliyun sources.list, and delete the next line: #
+# The sources.list is a Debian OS Aliyun mirror source list, which is very fast.
+# If your network is slow, you can delete the next line.
+# If your image OS is Ubuntu, change sources.list to Ubuntu Aliyun sources.list and delete the next line.
 # COPY sources.list /etc/apt/sources.list
 
 #Install basic dependencies
@@ -15,11 +18,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
     && apt autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 	
-# config sshd
+# Configure SSH daemon
 COPY ssh/sshd_config /etc/ssh/sshd_config
 COPY ssh/ssh-start-chpasswd.sh /usr/sbin/ssh-start-chpasswd.sh
 
-#config jupyter
+# Install Python packages for Jupyter and data science
 RUN pip install --no-cache-dir opencv-python pandas graphviz \
                 pyyaml scikit-learn dlib requests argparse \
                 cython scipy seaborn Plotly Bokeh \
@@ -30,18 +33,20 @@ RUN pip3 install --no-cache-dir opencv-python matplotlib pandas graphviz \
                 cython scipy seaborn Plotly Bokeh \
                 Statsmodels NetworkX jupyter jupyterlab -i https://mirrors.aliyun.com/pypi/simple/
 
-
+# Configure Jupyter
 COPY config-jupyter.sh /config-jupyter.sh
 RUN /config-jupyter.sh && rm /config-jupyter.sh
 COPY jupyter_server_config.py /root/.jupyter/jupyter_server_config.py
+
+# Configure Jupyter_notebook
 # RUN jupyter notebook --generate-config
 COPY jupyter_notebook_config.py /root/.jupyter/jupyter_notebook_config.py
 COPY custom.js /root/.jupyter/custom/custom.js
 
-#Set tini 
+# Set up Tini as the entrypoint for proper signal handling
 COPY tini /tini
 ENTRYPOINT ["/tini", "--"]
 RUN mkdir -p /var/run/sshd && chmod 777 /tini
+
+# Expose port 22 for SSH
 EXPOSE 22
-
-
